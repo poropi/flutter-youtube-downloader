@@ -1,0 +1,146 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "YouTube Downloader",
+
+  "ffmpegDetected": "ffmpeg detected  ·  High-quality MP4 / MP3 conversion supported",
+  "ffmpegNotDetected": "ffmpeg not detected  ·  MP4 up to 360p / audio saved as .m4a",
+
+  "urlLabel": "YouTube URL",
+  "urlHint": "https://www.youtube.com/watch?v=...",
+  "fetchButton": "Fetch video info",
+  "processing": "Processing...",
+  "downloadButton": "Download",
+  "openFolderButton": "Open folder",
+  "resetButton": "Start over",
+  "logPanelTitle": "Processing log",
+
+  "savedPath": "Saved to: {path}",
+  "@savedPath": {
+    "placeholders": {
+      "path": { "type": "String" }
+    }
+  },
+
+  "formatMp3Subtitle": "Audio only",
+  "formatMp4Subtitle": "Video + Audio",
+
+  "statusFetching": "Fetching video info...",
+  "statusFetchSuccess": "Video info retrieved",
+  "statusUrlInvalid": "Invalid URL or video not found",
+  "statusDownloading": "Downloading...",
+  "statusDownloadingAudio": "Downloading audio...",
+  "statusMerging": "Merging with ffmpeg...",
+  "statusConvertingMp3": "Converting to MP3...",
+  "statusDone": "Done!",
+  "statusDoneNoFfmpegMp4": "Done! (Up to 360p — install ffmpeg for higher quality)\nbrew install ffmpeg",
+  "statusDoneNoFfmpegMp3": "Done! (Saved as .{ext} — ffmpeg not found)\nFor MP3: brew install ffmpeg",
+  "@statusDoneNoFfmpegMp3": {
+    "placeholders": {
+      "ext": { "type": "String" }
+    }
+  },
+  "statusError": "Error: {message}",
+  "@statusError": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+
+  "labelVideo": "Video",
+  "labelAudio": "Audio",
+
+  "logFetchingInfo": "Fetching video info with YoutubeExplode v3...",
+  "logFetchSuccess": "Retrieved: \"{title}\"",
+  "@logFetchSuccess": {
+    "placeholders": {
+      "title": { "type": "String" }
+    }
+  },
+  "logError": "Error: {message}",
+  "@logError": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "logFetchingManifest": "Fetching stream manifest...",
+  "logUsingClients": "ytClients: [safari, androidVr]",
+  "logManifestReady": "Manifest retrieved",
+  "logHighQualityMode": "ffmpeg found → High quality mode (separate video+audio streams)",
+  "logVideoStream": "Video: {quality} ({codec})",
+  "@logVideoStream": {
+    "placeholders": {
+      "quality": { "type": "String" },
+      "codec": { "type": "String" }
+    }
+  },
+  "logAudioStream": "Audio: {bitrate}kbps",
+  "@logAudioStream": {
+    "placeholders": {
+      "bitrate": { "type": "String" }
+    }
+  },
+  "logStartVideoDownload": "Starting video download...",
+  "logStartAudioDownload": "Starting audio download...",
+  "logMerging": "Merging with ffmpeg...",
+  "logFfmpegError": "ffmpeg error: {stderr}",
+  "@logFfmpegError": {
+    "placeholders": {
+      "stderr": { "type": "String" }
+    }
+  },
+  "logNoFfmpegMuxed": "ffmpeg not found → Using muxed stream (up to 360p)",
+  "logQuality": "Quality: {quality}",
+  "@logQuality": {
+    "placeholders": {
+      "quality": { "type": "String" }
+    }
+  },
+  "logMp4Done": "MP4 complete: {path}",
+  "@logMp4Done": {
+    "placeholders": {
+      "path": { "type": "String" }
+    }
+  },
+  "logAudioInfo": "Audio: {bitrate}kbps ({ext})",
+  "@logAudioInfo": {
+    "placeholders": {
+      "bitrate": { "type": "String" },
+      "ext": { "type": "String" }
+    }
+  },
+  "logConvertingMp3": "Converting to MP3 with ffmpeg...",
+  "logMp3Done": "MP3 complete: {path}",
+  "@logMp3Done": {
+    "placeholders": {
+      "path": { "type": "String" }
+    }
+  },
+  "logNoFfmpegSaving": "ffmpeg not found → Saving as .{ext}",
+  "@logNoFfmpegSaving": {
+    "placeholders": {
+      "ext": { "type": "String" }
+    }
+  },
+  "logDownloadStart": "[{label}] Starting download (total: {size} MB)",
+  "@logDownloadStart": {
+    "placeholders": {
+      "label": { "type": "String" },
+      "size": { "type": "String" }
+    }
+  },
+  "logDownloadProgress": "{label} downloading... {received} / {total} MB",
+  "@logDownloadProgress": {
+    "placeholders": {
+      "label": { "type": "String" },
+      "received": { "type": "String" },
+      "total": { "type": "String" }
+    }
+  },
+  "logDownloadDone": "[{label}] Download complete",
+  "@logDownloadDone": {
+    "placeholders": {
+      "label": { "type": "String" }
+    }
+  }
+}

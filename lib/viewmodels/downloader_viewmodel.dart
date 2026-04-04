@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/enums.dart';
 import '../models/log_entry.dart';
 import '../models/video_info.dart';
@@ -12,11 +13,9 @@ import '../models/video_info.dart';
 /// [ChangeNotifier] を継承し、状態が変化するたびに [notifyListeners] を呼び出す。
 /// View 側は [ListenableBuilder] でこの ViewModel を監視し、UI を再描画する。
 ///
-/// ## 主な責務
-/// - YouTube URL から動画情報を取得する（[fetchInfo]）
-/// - 指定フォーマットでダウンロードを実行する（[startDownload]）
-/// - ダウンロード進捗・ステータスメッセージ・処理ログを管理する
-/// - ffmpeg の有無を判定し、利用可能な場合は高画質処理を行う
+/// ## 多言語対応
+/// View の `ListenableBuilder` 内で [setL10n] を呼び出すことで
+/// [AppLocalizations] インスタンスを注入し、全ての文字列を現在のロケールで生成する。
 class DownloaderViewModel extends ChangeNotifier {
   // ─── 状態フィールド ────────────────────────────────────────
 
@@ -46,6 +45,9 @@ class DownloaderViewModel extends ChangeNotifier {
 
   /// [dispose] 後に [notifyListeners] を呼び出さないためのフラグ。
   bool _disposed = false;
+
+  /// View から注入されるローカライゼーションインスタンス。
+  AppLocalizations? _l10n;
 
   // ─── Getter（View から読み取り専用） ──────────────────────
 
@@ -99,6 +101,12 @@ class DownloaderViewModel extends ChangeNotifier {
 
   // ─── 公開メソッド（View から呼び出す） ────────────────────
 
+  /// View のビルド時に現在のロケール情報を注入する。
+  ///
+  /// [ListenableBuilder] の builder 内で毎回呼び出すことで、
+  /// システムロケールの変更にも追従できる。
+  void setL10n(AppLocalizations l10n) => _l10n = l10n;
+
   /// 出力フォーマットを変更する。
   ///
   /// - [format] : 新しいフォーマット（[OutputFormat.mp3] または [OutputFormat.mp4]）。
@@ -119,18 +127,18 @@ class DownloaderViewModel extends ChangeNotifier {
     if (url.isEmpty) return;
 
     _clearLogs();
-    _setState(DownloadState.fetching, '動画情報を取得中...');
-    _addLog('YoutubeExplode v3 で動画情報を取得中...');
+    _setState(DownloadState.fetching, _l10n?.statusFetching ?? 'Fetching...');
+    _addLog(_l10n?.logFetchingInfo ?? 'Fetching video info...');
 
     final yt = YoutubeExplode();
     try {
       final video = await yt.videos.get(url);
       _videoInfo = VideoInfo.fromVideo(video);
-      _addLog('取得完了: 「${video.title}」');
-      _setState(DownloadState.idle, '動画情報を取得しました');
+      _addLog(_l10n?.logFetchSuccess(video.title) ?? 'Retrieved: "${video.title}"');
+      _setState(DownloadState.idle, _l10n?.statusFetchSuccess ?? 'Done');
     } catch (e) {
-      _addLog('エラー: $e', isError: true);
-      _setState(DownloadState.error, 'URLが正しくないか、動画が見つかりません');
+      _addLog(_l10n?.logError(e.toString()) ?? 'Error: $e', isError: true);
+      _setState(DownloadState.error, _l10n?.statusUrlInvalid ?? 'Invalid URL');
     } finally {
       yt.close();
     }
@@ -152,19 +160,18 @@ class DownloaderViewModel extends ChangeNotifier {
     _clearLogs();
     _progress = 0;
     _savedPath = '';
-    _setState(DownloadState.downloading, 'ダウンロード中...');
+    _setState(DownloadState.downloading, _l10n?.statusDownloading ?? 'Downloading...');
 
     final yt = YoutubeExplode();
     try {
-      _addLog('ストリームマニフェスト取得中...');
-      _addLog('ytClients: [safari, androidVr] を使用');
+      _addLog(_l10n?.logFetchingManifest ?? 'Fetching manifest...');
+      _addLog(_l10n?.logUsingClients ?? 'ytClients: [safari, androidVr]');
 
-      // VideoInfo.id を使ってマニフェストを取得
       final manifest = await yt.videos.streams.getManifest(
         _videoInfo!.id,
         ytClients: [YoutubeApiClient.safari, YoutubeApiClient.androidVr],
       );
-      _addLog('マニフェスト取得完了');
+      _addLog(_l10n?.logManifestReady ?? 'Manifest ready');
 
       final dir = await _getDownloadsDir();
       final safeTitle = _sanitizeTitle(_videoInfo!.title);
@@ -175,9 +182,9 @@ class DownloaderViewModel extends ChangeNotifier {
         await _downloadMp3(yt, manifest, dir.path, safeTitle);
       }
     } catch (e, st) {
-      _addLog('エラー: $e', isError: true);
+      _addLog(_l10n?.logError(e.toString()) ?? 'Error: $e', isError: true);
       _addLog(st.toString().split('\n').first, isError: true);
-      _setState(DownloadState.error, 'エラー: $e');
+      _setState(DownloadState.error, _l10n?.statusError(e.toString()) ?? 'Error: $e');
     } finally {
       yt.close();
     }
@@ -202,11 +209,6 @@ class DownloaderViewModel extends ChangeNotifier {
   ///
   /// ffmpeg が利用可能な場合は映像・音声ストリームを個別取得してマージする（最高画質）。
   /// ffmpeg がない場合は muxed ストリーム（最大 360p）を直接保存する。
-  ///
-  /// - [yt]       : [YoutubeExplode] のインスタンス。
-  /// - [manifest] : 取得済みのストリームマニフェスト。
-  /// - [dirPath]  : 保存先ディレクトリのフルパス。
-  /// - [title]    : ファイル名に使用する sanitize 済みのタイトル。
   Future<void> _downloadMp4(
     YoutubeExplode yt,
     StreamManifest manifest,
@@ -214,68 +216,62 @@ class DownloaderViewModel extends ChangeNotifier {
     String title,
   ) async {
     final savePath = '$dirPath/$title.mp4';
+    final labelVideo = _l10n?.labelVideo ?? 'Video';
+    final labelAudio = _l10n?.labelAudio ?? 'Audio';
 
     if (_ffmpegAvailable) {
-      // 高画質: 映像+音声を別々に取得して ffmpeg でマージ
-      _addLog('ffmpeg あり → 高画質モード（映像+音声を別取得）');
+      _addLog(_l10n?.logHighQualityMode ?? 'High quality mode');
       final videoStream = manifest.videoOnly.sortByVideoQuality().first;
       final audioStream = manifest.audioOnly.withHighestBitrate();
-      _addLog(
-        '映像: ${videoStream.videoQuality} (${videoStream.codec.mimeType})',
-      );
-      _addLog(
-        '音声: ${audioStream.bitrate.kiloBitsPerSecond.toStringAsFixed(0)}kbps',
-      );
+      _addLog(_l10n?.logVideoStream(
+            videoStream.videoQuality.toString(),
+            videoStream.codec.mimeType,
+          ) ??
+          'Video: ${videoStream.videoQuality}');
+      _addLog(_l10n?.logAudioStream(
+            audioStream.bitrate.kiloBitsPerSecond.toStringAsFixed(0),
+          ) ??
+          'Audio: ${audioStream.bitrate.kiloBitsPerSecond.toStringAsFixed(0)}kbps');
 
       final tempVideo = '$dirPath/__tmp_video.${videoStream.container.name}';
       final tempAudio = '$dirPath/__tmp_audio.${audioStream.container.name}';
 
-      _addLog('映像ダウンロード開始...');
-      await _downloadStream(yt, videoStream, tempVideo, label: '映像');
+      _addLog(_l10n?.logStartVideoDownload ?? 'Starting video download...');
+      await _downloadStream(yt, videoStream, tempVideo, label: labelVideo);
 
       _progress = 0;
-      _setState(DownloadState.downloading, '音声をダウンロード中...');
-      _addLog('音声ダウンロード開始...');
-      await _downloadStream(yt, audioStream, tempAudio, label: '音声');
+      _setState(DownloadState.downloading, _l10n?.statusDownloadingAudio ?? 'Downloading audio...');
+      _addLog(_l10n?.logStartAudioDownload ?? 'Starting audio download...');
+      await _downloadStream(yt, audioStream, tempAudio, label: labelAudio);
 
-      _setState(DownloadState.converting, 'ffmpeg でマージ中...');
-      _addLog('ffmpeg マージ中...');
+      _setState(DownloadState.converting, _l10n?.statusMerging ?? 'Merging...');
+      _addLog(_l10n?.logMerging ?? 'Merging...');
 
       final result = await Process.run('ffmpeg', [
-        '-y',
-        '-i',
-        tempVideo,
-        '-i',
-        tempAudio,
-        '-c:v',
-        'copy',
-        '-c:a',
-        'aac',
-        savePath,
+        '-y', '-i', tempVideo, '-i', tempAudio, '-c:v', 'copy', '-c:a', 'aac', savePath,
       ]);
 
       await File(tempVideo).delete().catchError((_) => File(tempVideo));
       await File(tempAudio).delete().catchError((_) => File(tempAudio));
 
       if (result.exitCode != 0) {
-        _addLog('ffmpeg エラー: ${result.stderr}', isError: true);
-        throw Exception('ffmpeg マージ失敗（exitCode=${result.exitCode}）');
+        _addLog(_l10n?.logFfmpegError(result.stderr.toString()) ?? 'ffmpeg error', isError: true);
+        throw Exception('ffmpeg merge failed (exitCode=${result.exitCode})');
       }
     } else {
-      // ffmpeg なし: muxed ストリーム（最大 360p）
-      _addLog('ffmpeg なし → muxed ストリーム（最大 360p）を使用');
+      _addLog(_l10n?.logNoFfmpegMuxed ?? 'Using muxed stream');
       final muxed = manifest.muxed.withHighestBitrate();
-      _addLog('品質: ${muxed.videoQuality}');
+      _addLog(_l10n?.logQuality(muxed.videoQuality.toString()) ?? 'Quality: ${muxed.videoQuality}');
       await _downloadStream(yt, muxed, savePath, label: 'MP4');
     }
 
-    _addLog('MP4 完成: $savePath');
+    _addLog(_l10n?.logMp4Done(savePath) ?? 'MP4 done: $savePath');
     _savedPath = savePath;
     _setState(
       DownloadState.done,
       _ffmpegAvailable
-          ? '完了！'
-          : '完了！（ffmpeg が無いため最大 360p）\n高画質は brew install ffmpeg で有効化できます',
+          ? (_l10n?.statusDone ?? 'Done!')
+          : (_l10n?.statusDoneNoFfmpegMp4 ?? 'Done! (up to 360p)'),
     );
   }
 
@@ -284,11 +280,6 @@ class DownloaderViewModel extends ChangeNotifier {
   /// 音声ストリームを一時ファイルにダウンロードし、ffmpeg が利用可能であれば
   /// 192kbps・44.1kHz・ステレオの MP3 に変換する。
   /// ffmpeg がない場合は元のコンテナ形式（.m4a など）のまま保存する。
-  ///
-  /// - [yt]       : [YoutubeExplode] のインスタンス。
-  /// - [manifest] : 取得済みのストリームマニフェスト。
-  /// - [dirPath]  : 保存先ディレクトリのフルパス。
-  /// - [title]    : ファイル名に使用する sanitize 済みのタイトル。
   Future<void> _downloadMp3(
     YoutubeExplode yt,
     StreamManifest manifest,
@@ -296,53 +287,44 @@ class DownloaderViewModel extends ChangeNotifier {
     String title,
   ) async {
     final audioStream = manifest.audioOnly.withHighestBitrate();
-    final tempExt = audioStream.container.name == 'mp4'
-        ? 'm4a'
-        : audioStream.container.name;
+    final tempExt = audioStream.container.name == 'mp4' ? 'm4a' : audioStream.container.name;
     final tempPath = '$dirPath/__tmp_audio.$tempExt';
+    final labelAudio = _l10n?.labelAudio ?? 'Audio';
 
-    _addLog(
-      '音声: ${audioStream.bitrate.kiloBitsPerSecond.toStringAsFixed(0)}kbps ($tempExt)',
-    );
-    _addLog('音声ダウンロード開始...');
-    await _downloadStream(yt, audioStream, tempPath, label: '音声');
+    _addLog(_l10n?.logAudioInfo(
+          audioStream.bitrate.kiloBitsPerSecond.toStringAsFixed(0),
+          tempExt,
+        ) ??
+        'Audio: ${audioStream.bitrate.kiloBitsPerSecond.toStringAsFixed(0)}kbps ($tempExt)');
+    _addLog(_l10n?.logStartAudioDownload ?? 'Starting audio download...');
+    await _downloadStream(yt, audioStream, tempPath, label: labelAudio);
 
     if (_ffmpegAvailable) {
-      _setState(DownloadState.converting, 'MP3 変換中...');
-      _addLog('ffmpeg で MP3 変換中...');
+      _setState(DownloadState.converting, _l10n?.statusConvertingMp3 ?? 'Converting to MP3...');
+      _addLog(_l10n?.logConvertingMp3 ?? 'Converting to MP3...');
 
       final savePath = '$dirPath/$title.mp3';
       final result = await Process.run('ffmpeg', [
-        '-y',
-        '-i',
-        tempPath,
-        '-vn',
-        '-ar',
-        '44100',
-        '-ac',
-        '2',
-        '-b:a',
-        '192k',
-        savePath,
+        '-y', '-i', tempPath, '-vn', '-ar', '44100', '-ac', '2', '-b:a', '192k', savePath,
       ]);
       await File(tempPath).delete().catchError((_) => File(tempPath));
 
       if (result.exitCode != 0) {
-        _addLog('ffmpeg エラー: ${result.stderr}', isError: true);
-        throw Exception('MP3 変換失敗（exitCode=${result.exitCode}）');
+        _addLog(_l10n?.logFfmpegError(result.stderr.toString()) ?? 'ffmpeg error', isError: true);
+        throw Exception('MP3 conversion failed (exitCode=${result.exitCode})');
       }
 
-      _addLog('MP3 完成: $savePath');
+      _addLog(_l10n?.logMp3Done(savePath) ?? 'MP3 done: $savePath');
       _savedPath = savePath;
-      _setState(DownloadState.done, '完了！');
+      _setState(DownloadState.done, _l10n?.statusDone ?? 'Done!');
     } else {
-      _addLog('ffmpeg なし → .$tempExt で保存');
+      _addLog(_l10n?.logNoFfmpegSaving(tempExt) ?? 'Saving as .$tempExt');
       final savePath = '$dirPath/$title.$tempExt';
       await File(tempPath).rename(savePath);
       _savedPath = savePath;
       _setState(
         DownloadState.done,
-        '完了！（ffmpeg 未検出のため .$tempExt で保存）\nMP3 変換は brew install ffmpeg で有効化できます',
+        _l10n?.statusDoneNoFfmpegMp3(tempExt) ?? 'Done! (.$tempExt)',
       );
     }
   }
@@ -355,7 +337,7 @@ class DownloaderViewModel extends ChangeNotifier {
   /// - [yt]         : [YoutubeExplode] のインスタンス。
   /// - [streamInfo] : ダウンロード先のストリーム情報。
   /// - [savePath]   : 書き込み先ファイルのフルパス。
-  /// - [label]      : ログ・ステータスメッセージに表示するラベル（例: "映像"）。
+  /// - [label]      : ログ・ステータスメッセージに表示するラベル（翻訳済み文字列）。
   Future<void> _downloadStream(
     YoutubeExplode yt,
     StreamInfo streamInfo,
@@ -363,9 +345,11 @@ class DownloaderViewModel extends ChangeNotifier {
     required String label,
   }) async {
     final total = streamInfo.size.totalBytes;
-    _addLog(
-      '[$label] 受信開始（合計: ${(total / 1024 / 1024).toStringAsFixed(1)} MB）',
-    );
+    _addLog(_l10n?.logDownloadStart(
+          label,
+          (total / 1024 / 1024).toStringAsFixed(1),
+        ) ??
+        '[$label] Starting (${(total / 1024 / 1024).toStringAsFixed(1)} MB)');
 
     final stream = yt.videos.streams.get(streamInfo);
     final sink = File(savePath).openWrite();
@@ -375,15 +359,18 @@ class DownloaderViewModel extends ChangeNotifier {
       sink.add(chunk);
       received += chunk.length;
       _progress = received / total;
-      _statusMessage =
-          '$label ダウンロード中... ${(received / 1024 / 1024).toStringAsFixed(1)} /'
-          ' ${(total / 1024 / 1024).toStringAsFixed(1)} MB';
+      _statusMessage = _l10n?.logDownloadProgress(
+            label,
+            (received / 1024 / 1024).toStringAsFixed(1),
+            (total / 1024 / 1024).toStringAsFixed(1),
+          ) ??
+          '$label ${(received / 1024 / 1024).toStringAsFixed(1)} / ${(total / 1024 / 1024).toStringAsFixed(1)} MB';
       _notify();
     }
 
     await sink.flush();
     await sink.close();
-    _addLog('[$label] ダウンロード完了');
+    _addLog(_l10n?.logDownloadDone(label) ?? '[$label] Done');
   }
 
   // ─── ユーティリティ ────────────────────────────────────────
@@ -397,17 +384,13 @@ class DownloaderViewModel extends ChangeNotifier {
       final dir = Directory('${Platform.environment['HOME']}/Downloads');
       if (await dir.exists()) return dir;
     } else if (Platform.isWindows) {
-      final dir = Directory(
-        '${Platform.environment['USERPROFILE']}\\Downloads',
-      );
+      final dir = Directory('${Platform.environment['USERPROFILE']}\\Downloads');
       if (await dir.exists()) return dir;
     }
     return await getApplicationDocumentsDirectory();
   }
 
   /// ファイル名として使用できない文字を `_` に置換し、最大 80 文字に切り詰める。
-  ///
-  /// 対象文字: `\ / : * ? " < > |`
   String _sanitizeTitle(String title) => title
       .replaceAll(RegExp(r'[\\/:*?"<>|]'), '_')
       .substring(0, title.length.clamp(0, 80));
@@ -426,9 +409,6 @@ class DownloaderViewModel extends ChangeNotifier {
   }
 
   /// ログエントリを追加して通知する。
-  ///
-  /// - [message] : ログ文字列。
-  /// - [isError] : エラーレベルの場合は `true`。
   void _addLog(String message, {bool isError = false}) {
     _logs.add(LogEntry(message, isError: isError));
     _notify();

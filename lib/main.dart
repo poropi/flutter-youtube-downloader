@@ -5,6 +5,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'views/downloader_page.dart';
+import 'l10n/app_localizations.dart';
 
 /// アプリを起動する。
 ///
@@ -15,8 +16,9 @@ void main() {
 
 /// アプリのルートウィジェット。
 ///
-/// [MaterialApp] を生成し、テーマ・初期画面を設定する。
+/// [MaterialApp] を生成し、テーマ・ロケール・初期画面を設定する。
 /// Material Design 3 / ダークテーマをベーステーマとして使用する。
+/// システムのロケール設定に自動追従して日本語 / 英語を切り替える。
 class MyApp extends StatelessWidget {
   /// コンストラクタ。
   const MyApp({super.key});
@@ -29,6 +31,12 @@ class MyApp extends StatelessWidget {
 
       /// デバッグモードのバナーを非表示にする。
       debugShowCheckedModeBanner: false,
+
+      /// 多言語対応のデリゲート（AppLocalizations + Flutter 標準ウィジェット用）。
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+
+      /// サポートするロケール（日本語・英語）。システム設定に自動追従する。
+      supportedLocales: AppLocalizations.supportedLocales,
 
       /// YouTube の赤をシードカラーとしたダークテーマ。
       theme: ThemeData(

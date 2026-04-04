@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/enums.dart';
+import '../../l10n/app_localizations.dart';
 
 /// MP3 / MP4 を選択するフォーマット選択カード。
 ///
@@ -18,6 +19,9 @@ class FormatCard extends StatelessWidget {
   /// カードがタップされたときに呼び出されるコールバック。[value] を引数として渡す。
   final ValueChanged<OutputFormat> onTap;
 
+  /// ローカライゼーションインスタンス。サブタイトルの表示に使用する。
+  final AppLocalizations l10n;
+
   /// コンストラクタ。すべてのプロパティは必須。
   const FormatCard({
     super.key,
@@ -25,6 +29,7 @@ class FormatCard extends StatelessWidget {
     required this.groupValue,
     required this.enabled,
     required this.onTap,
+    required this.l10n,
   });
 
   /// このカードが選択済みかどうか。
@@ -37,8 +42,9 @@ class FormatCard extends StatelessWidget {
   /// フォーマット名のラベル文字列（"MP3" または "MP4"）。
   String get _label => value == OutputFormat.mp3 ? 'MP3' : 'MP4';
 
-  /// フォーマットの説明文字列（"音声のみ" または "映像 + 音声"）。
-  String get _subtitle => value == OutputFormat.mp3 ? '音声のみ' : '映像 + 音声';
+  /// フォーマットの説明文字列（ロケールに応じて切り替わる）。
+  String _subtitle() =>
+      value == OutputFormat.mp3 ? l10n.formatMp3Subtitle : l10n.formatMp4Subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +80,7 @@ class FormatCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  _subtitle,
+                  _subtitle(),
                   style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
                 ),
               ],

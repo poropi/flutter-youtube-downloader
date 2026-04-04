@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../viewmodels/downloader_viewmodel.dart';
 import '../models/enums.dart';
+import '../l10n/app_localizations.dart';
 import 'widgets/format_card.dart';
 import 'widgets/video_info_card.dart';
 import 'widgets/status_section.dart';
@@ -13,16 +14,6 @@ import 'widgets/log_panel.dart';
 /// [DownloaderViewModel] の状態を [ListenableBuilder] で監視し、
 /// 変化があるたびに UI を再描画する。
 /// ユーザー操作はすべて [DownloaderViewModel] のメソッドに委譲する。
-///
-/// ## レイアウト
-/// - タイトル / ffmpeg 検出バッジ
-/// - URL 入力フィールド / 動画情報取得ボタン
-/// - 出力フォーマット選択カード（MP3 / MP4）
-/// - 取得済み動画情報カード（[VideoInfoCard]）
-/// - ダウンロードボタン
-/// - ステータスセクション（[StatusSection]）
-/// - 保存先フォルダを開くボタン / リセットボタン
-/// - 処理ログパネル（[LogPanel]）
 class DownloaderPage extends StatefulWidget {
   /// コンストラクタ。
   const DownloaderPage({super.key});
@@ -56,17 +47,20 @@ class _DownloaderPageState extends State<DownloaderPage> {
 
   @override
   Widget build(BuildContext context) {
-    // ListenableBuilder: ViewModel が notifyListeners() を呼ぶたびに
-    // builder 内だけ再ビルドされる（ページ全体を StatefulWidget にする必要がない）
     return ListenableBuilder(
       listenable: _viewModel,
-      builder: (context, _) => _buildScaffold(context),
+      builder: (context, _) {
+        // ロケール情報を毎ビルド時に ViewModel へ注入する
+        _viewModel.setL10n(AppLocalizations.of(context)!);
+        return _buildScaffold(context);
+      },
     );
   }
 
   /// [Scaffold] 全体を構築する。
   Widget _buildScaffold(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: cs.surface,
@@ -79,40 +73,41 @@ class _DownloaderPageState extends State<DownloaderPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _buildTitle(context),
+                  _buildTitle(context, l10n),
                   const SizedBox(height: 8),
-                  _buildFfmpegBadge(context),
+                  _buildFfmpegBadge(context, l10n),
                   const SizedBox(height: 32),
-                  _buildUrlField(context),
+                  _buildUrlField(context, l10n),
                   const SizedBox(height: 10),
-                  _buildFetchButton(context),
+                  _buildFetchButton(context, l10n),
                   const SizedBox(height: 20),
-                  _buildFormatSelector(),
+                  _buildFormatSelector(l10n),
                   const SizedBox(height: 20),
                   if (_viewModel.videoInfo != null) ...[
                     VideoInfoCard(video: _viewModel.videoInfo!),
                     const SizedBox(height: 20),
                   ],
-                  _buildDownloadButton(context),
+                  _buildDownloadButton(context, l10n),
                   const SizedBox(height: 16),
                   StatusSection(
                     state: _viewModel.state,
                     statusMessage: _viewModel.statusMessage,
                     progress: _viewModel.progress,
                     savedPath: _viewModel.savedPath,
+                    l10n: l10n,
                   ),
                   if (_viewModel.savedPath.isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    _buildOpenFolderButton(),
+                    _buildOpenFolderButton(l10n),
                   ],
                   if (_viewModel.state == DownloadState.done ||
                       _viewModel.state == DownloadState.error) ...[
                     const SizedBox(height: 8),
-                    _buildResetButton(),
+                    _buildResetButton(l10n),
                   ],
                   if (_viewModel.logs.isNotEmpty) ...[
                     const SizedBox(height: 24),
-                    LogPanel(logs: _viewModel.logs),
+                    LogPanel(logs: _viewModel.logs, l10n: l10n),
                   ],
                 ],
               ),
@@ -126,7 +121,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
   // ─── 各ウィジェット構築メソッド ──────────────────────────────
 
   /// アプリタイトルを表示する行ウィジェットを返す。
-  Widget _buildTitle(BuildContext context) {
+  Widget _buildTitle(BuildContext context, AppLocalizations l10n) {
     final cs = Theme.of(context).colorScheme;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -134,23 +129,22 @@ class _DownloaderPageState extends State<DownloaderPage> {
         Icon(Icons.ondemand_video, color: cs.primary, size: 36),
         const SizedBox(width: 12),
         Text(
-          'YouTube Downloader',
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          l10n.appTitle,
+          style: Theme.of(context)
+              .textTheme
+              .headlineSmall
+              ?.copyWith(fontWeight: FontWeight.bold),
         ),
       ],
     );
   }
 
   /// ffmpeg の検出状態を示すバッジテキストを返す。
-  ///
-  /// ffmpeg が検出済みの場合は高画質対応を、未検出の場合は制限を案内する。
-  Widget _buildFfmpegBadge(BuildContext context) {
+  Widget _buildFfmpegBadge(BuildContext context, AppLocalizations l10n) {
     final cs = Theme.of(context).colorScheme;
     final label = _viewModel.ffmpegAvailable
-        ? 'ffmpeg 検出済み  ·  高画質 MP4 / MP3 変換 対応'
-        : 'ffmpeg 未検出  ·  MP4 は最大 360p / 音声は .m4a 保存';
+        ? l10n.ffmpegDetected
+        : l10n.ffmpegNotDetected;
     return Center(
       child: Text(
         label,
@@ -160,15 +154,13 @@ class _DownloaderPageState extends State<DownloaderPage> {
   }
 
   /// YouTube URL を入力するテキストフィールドを返す。
-  ///
-  /// 入力があるとクリアボタンが表示され、Enter キーで動画情報取得を実行する。
-  Widget _buildUrlField(BuildContext context) {
+  Widget _buildUrlField(BuildContext context, AppLocalizations l10n) {
     return TextField(
       controller: _urlController,
       enabled: !_viewModel.isBusy,
       decoration: InputDecoration(
-        labelText: 'YouTube URL',
-        hintText: 'https://www.youtube.com/watch?v=...',
+        labelText: l10n.urlLabel,
+        hintText: l10n.urlHint,
         prefixIcon: const Icon(Icons.link),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         suffixIcon: _urlController.text.isNotEmpty
@@ -180,15 +172,13 @@ class _DownloaderPageState extends State<DownloaderPage> {
               )
             : null,
       ),
-      onChanged: (_) => setState(() {}), // suffixIcon の表示更新のため
+      onChanged: (_) => setState(() {}),
       onSubmitted: (_) => _viewModel.fetchInfo(_url),
     );
   }
 
   /// 「動画情報を取得」ボタンを返す。
-  ///
-  /// 取得中はスピナーアイコンを表示し、ボタンを無効化する。
-  Widget _buildFetchButton(BuildContext context) {
+  Widget _buildFetchButton(BuildContext context, AppLocalizations l10n) {
     return OutlinedButton.icon(
       onPressed: _viewModel.isBusy || _url.isEmpty
           ? null
@@ -200,12 +190,12 @@ class _DownloaderPageState extends State<DownloaderPage> {
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           : const Icon(Icons.search),
-      label: const Text('動画情報を取得'),
+      label: Text(l10n.fetchButton),
     );
   }
 
   /// MP3 / MP4 フォーマット選択カードの行を返す。
-  Widget _buildFormatSelector() {
+  Widget _buildFormatSelector(AppLocalizations l10n) {
     return Row(
       children: OutputFormat.values.map((f) {
         final isLast = f == OutputFormat.values.last;
@@ -217,6 +207,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
               groupValue: _viewModel.format,
               enabled: !_viewModel.isBusy,
               onTap: _viewModel.setFormat,
+              l10n: l10n,
             ),
           ),
         );
@@ -225,9 +216,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
   }
 
   /// 「ダウンロード」ボタンを返す。
-  ///
-  /// 処理中はスピナーを表示してボタンを無効化する。
-  Widget _buildDownloadButton(BuildContext context) {
+  Widget _buildDownloadButton(BuildContext context, AppLocalizations l10n) {
     return FilledButton.icon(
       onPressed: _viewModel.isBusy
           ? null
@@ -236,14 +225,11 @@ class _DownloaderPageState extends State<DownloaderPage> {
           ? const SizedBox(
               width: 18,
               height: 18,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
+              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
             )
           : const Icon(Icons.download),
       label: Text(
-        _viewModel.isBusy ? '処理中...' : 'ダウンロード',
+        _viewModel.isBusy ? l10n.processing : l10n.downloadButton,
         style: const TextStyle(fontSize: 16),
       ),
       style: FilledButton.styleFrom(
@@ -254,28 +240,24 @@ class _DownloaderPageState extends State<DownloaderPage> {
   }
 
   /// 「保存先フォルダを開く」ボタンを返す。
-  ///
-  /// macOS の `open` コマンドで [savedPath] の親ディレクトリを Finder で開く。
-  Widget _buildOpenFolderButton() {
+  Widget _buildOpenFolderButton(AppLocalizations l10n) {
     return OutlinedButton.icon(
       icon: const Icon(Icons.folder_open),
-      label: const Text('保存先フォルダを開く'),
+      label: Text(l10n.openFolderButton),
       onPressed: () =>
           Process.run('open', [File(_viewModel.savedPath).parent.path]),
     );
   }
 
   /// 「最初に戻る」ボタンを返す。
-  ///
-  /// URL フィールドをクリアし、[DownloaderViewModel.reset] で状態を初期化する。
-  Widget _buildResetButton() {
+  Widget _buildResetButton(AppLocalizations l10n) {
     return OutlinedButton.icon(
       onPressed: () {
         _urlController.clear();
         _viewModel.reset();
       },
       icon: const Icon(Icons.refresh),
-      label: const Text('最初に戻る'),
+      label: Text(l10n.resetButton),
     );
   }
 }

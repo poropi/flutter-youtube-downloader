@@ -1,0 +1,146 @@
+{
+  "@@locale": "ja",
+
+  "appTitle": "YouTube Downloader",
+
+  "ffmpegDetected": "ffmpeg 検出済み  ·  高画質 MP4 / MP3 変換 対応",
+  "ffmpegNotDetected": "ffmpeg 未検出  ·  MP4 は最大 360p / 音声は .m4a 保存",
+
+  "urlLabel": "YouTube URL",
+  "urlHint": "https://www.youtube.com/watch?v=...",
+  "fetchButton": "動画情報を取得",
+  "processing": "処理中...",
+  "downloadButton": "ダウンロード",
+  "openFolderButton": "保存先フォルダを開く",
+  "resetButton": "最初に戻る",
+  "logPanelTitle": "処理ログ",
+
+  "savedPath": "保存先: {path}",
+  "@savedPath": {
+    "placeholders": {
+      "path": { "type": "String" }
+    }
+  },
+
+  "formatMp3Subtitle": "音声のみ",
+  "formatMp4Subtitle": "映像 + 音声",
+
+  "statusFetching": "動画情報を取得中...",
+  "statusFetchSuccess": "動画情報を取得しました",
+  "statusUrlInvalid": "URLが正しくないか、動画が見つかりません",
+  "statusDownloading": "ダウンロード中...",
+  "statusDownloadingAudio": "音声をダウンロード中...",
+  "statusMerging": "ffmpeg でマージ中...",
+  "statusConvertingMp3": "MP3 変換中...",
+  "statusDone": "完了！",
+  "statusDoneNoFfmpegMp4": "完了！（ffmpeg が無いため最大 360p）\n高画質は brew install ffmpeg で有効化できます",
+  "statusDoneNoFfmpegMp3": "完了！（ffmpeg 未検出のため .{ext} で保存）\nMP3 変換は brew install ffmpeg で有効化できます",
+  "@statusDoneNoFfmpegMp3": {
+    "placeholders": {
+      "ext": { "type": "String" }
+    }
+  },
+  "statusError": "エラー: {message}",
+  "@statusError": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+
+  "labelVideo": "映像",
+  "labelAudio": "音声",
+
+  "logFetchingInfo": "YoutubeExplode v3 で動画情報を取得中...",
+  "logFetchSuccess": "取得完了: 「{title}」",
+  "@logFetchSuccess": {
+    "placeholders": {
+      "title": { "type": "String" }
+    }
+  },
+  "logError": "エラー: {message}",
+  "@logError": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "logFetchingManifest": "ストリームマニフェスト取得中...",
+  "logUsingClients": "ytClients: [safari, androidVr] を使用",
+  "logManifestReady": "マニフェスト取得完了",
+  "logHighQualityMode": "ffmpeg あり → 高画質モード（映像+音声を別取得）",
+  "logVideoStream": "映像: {quality} ({codec})",
+  "@logVideoStream": {
+    "placeholders": {
+      "quality": { "type": "String" },
+      "codec": { "type": "String" }
+    }
+  },
+  "logAudioStream": "音声: {bitrate}kbps",
+  "@logAudioStream": {
+    "placeholders": {
+      "bitrate": { "type": "String" }
+    }
+  },
+  "logStartVideoDownload": "映像ダウンロード開始...",
+  "logStartAudioDownload": "音声ダウンロード開始...",
+  "logMerging": "ffmpeg マージ中...",
+  "logFfmpegError": "ffmpeg エラー: {stderr}",
+  "@logFfmpegError": {
+    "placeholders": {
+      "stderr": { "type": "String" }
+    }
+  },
+  "logNoFfmpegMuxed": "ffmpeg なし → muxed ストリーム（最大 360p）を使用",
+  "logQuality": "品質: {quality}",
+  "@logQuality": {
+    "placeholders": {
+      "quality": { "type": "String" }
+    }
+  },
+  "logMp4Done": "MP4 完成: {path}",
+  "@logMp4Done": {
+    "placeholders": {
+      "path": { "type": "String" }
+    }
+  },
+  "logAudioInfo": "音声: {bitrate}kbps ({ext})",
+  "@logAudioInfo": {
+    "placeholders": {
+      "bitrate": { "type": "String" },
+      "ext": { "type": "String" }
+    }
+  },
+  "logConvertingMp3": "ffmpeg で MP3 変換中...",
+  "logMp3Done": "MP3 完成: {path}",
+  "@logMp3Done": {
+    "placeholders": {
+      "path": { "type": "String" }
+    }
+  },
+  "logNoFfmpegSaving": "ffmpeg なし → .{ext} で保存",
+  "@logNoFfmpegSaving": {
+    "placeholders": {
+      "ext": { "type": "String" }
+    }
+  },
+  "logDownloadStart": "[{label}] 受信開始（合計: {size} MB）",
+  "@logDownloadStart": {
+    "placeholders": {
+      "label": { "type": "String" },
+      "size": { "type": "String" }
+    }
+  },
+  "logDownloadProgress": "{label} ダウンロード中... {received} / {total} MB",
+  "@logDownloadProgress": {
+    "placeholders": {
+      "label": { "type": "String" },
+      "received": { "type": "String" },
+      "total": { "type": "String" }
+    }
+  },
+  "logDownloadDone": "[{label}] ダウンロード完了",
+  "@logDownloadDone": {
+    "placeholders": {
+      "label": { "type": "String" }
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/enums.dart';
+import '../../l10n/app_localizations.dart';
 
 /// ステータスメッセージ・プログレスバー・保存先パスを表示するセクション。
 ///
@@ -8,7 +9,6 @@ import '../../models/enums.dart';
 /// - [DownloadState.converting]: 不確定（indeterminate）の [LinearProgressIndicator] を表示。
 /// - [DownloadState.error]     : エラーカラーのステータスカードを表示。
 /// - [DownloadState.done]      : プライマリカラーのステータスカードを表示。
-/// - その他                    : ニュートラルなステータスカードを表示。
 class StatusSection extends StatelessWidget {
   /// 現在の処理状態。
   final DownloadState state;
@@ -22,6 +22,9 @@ class StatusSection extends StatelessWidget {
   /// 保存完了ファイルのフルパス。空文字の場合は非表示。
   final String savedPath;
 
+  /// ローカライゼーションインスタンス。保存先パスのラベル表示に使用する。
+  final AppLocalizations l10n;
+
   /// コンストラクタ。すべてのプロパティは必須。
   const StatusSection({
     super.key,
@@ -29,6 +32,7 @@ class StatusSection extends StatelessWidget {
     required this.statusMessage,
     required this.progress,
     required this.savedPath,
+    required this.l10n,
   });
 
   @override
@@ -42,9 +46,8 @@ class StatusSection extends StatelessWidget {
         if (state == DownloadState.downloading ||
             state == DownloadState.converting) ...[
           LinearProgressIndicator(
-            /// 変換中は不確定プログレス（`null`）、ダウンロード中は実進捗を表示する。
             value: state == DownloadState.converting
-                ? null // 不確定プログレス
+                ? null
                 : (progress > 0 ? progress : null),
             borderRadius: BorderRadius.circular(8),
             minHeight: 8,
@@ -57,7 +60,6 @@ class StatusSection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              /// 状態に応じてカードの背景色を切り替える。
               color: switch (state) {
                 DownloadState.error => cs.errorContainer,
                 DownloadState.done => cs.primaryContainer,
@@ -70,7 +72,6 @@ class StatusSection extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    /// 状態に応じたアイコンと色。
                     Icon(
                       switch (state) {
                         DownloadState.error => Icons.error_outline,
@@ -102,7 +103,7 @@ class StatusSection extends StatelessWidget {
                 if (savedPath.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   SelectableText(
-                    '保存先: $savedPath',
+                    l10n.savedPath(savedPath),
                     style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
                   ),
                 ],

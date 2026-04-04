@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
 import '../../models/log_entry.dart';
+import '../../l10n/app_localizations.dart';
 
 /// タイムスタンプ付きの処理ログを表示するパネルウィジェット。
 ///
 /// [DownloaderViewModel] が生成した [LogEntry] リストを受け取り、
 /// 各エントリを "HH:MM:SS  メッセージ" の形式で等幅フォントで表示する。
 /// エラーレベルのエントリはエラーカラーで強調表示される。
-/// メッセージは [SelectableText] なのでコピー操作が可能。
 class LogPanel extends StatelessWidget {
   /// 表示するログエントリのリスト。
   final List<LogEntry> logs;
 
-  /// コンストラクタ。[logs] は必須。
-  const LogPanel({super.key, required this.logs});
+  /// ローカライゼーションインスタンス。パネルタイトルの表示に使用する。
+  final AppLocalizations l10n;
+
+  /// コンストラクタ。[logs] と [l10n] は必須。
+  const LogPanel({super.key, required this.logs, required this.l10n});
 
   /// [DateTime] を `"HH:MM:SS"` 形式の文字列にフォーマットする。
-  ///
-  /// - [t] : フォーマット対象の日時。
   String _formatTime(DateTime t) =>
       '${t.hour.toString().padLeft(2, '0')}:'
       '${t.minute.toString().padLeft(2, '0')}:'
@@ -37,13 +38,13 @@ class LogPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// パネルのヘッダー行（ターミナルアイコン + "処理ログ" ラベル）。
+          /// パネルのヘッダー行（ターミナルアイコン + タイトル）。
           Row(
             children: [
               Icon(Icons.terminal, size: 14, color: cs.onSurfaceVariant),
               const SizedBox(width: 6),
               Text(
-                '処理ログ',
+                l10n.logPanelTitle,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
@@ -61,7 +62,6 @@ class LogPanel extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  /// タイムスタンプ（等幅フォント、サブテキストカラー）。
                   Text(
                     _formatTime(e.time),
                     style: TextStyle(
@@ -71,8 +71,6 @@ class LogPanel extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-
-                  /// ログメッセージ（選択可能、エラーは赤色）。
                   Expanded(
                     child: SelectableText(
                       e.message,
