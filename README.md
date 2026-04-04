@@ -1,82 +1,84 @@
 # YouTube Downloader
 
-YouTube の URL を入力するだけで、動画を **MP4** または **MP3** としてダウンロードできる Flutter デスクトップアプリです。
+A Flutter desktop app that downloads YouTube videos as **MP4** or **MP3** by simply entering a URL.
 
-> **対応プラットフォーム**: macOS（主対象）/ Windows / Linux
+> **Supported Platforms**: macOS (primary) / Windows / Linux
 
 > [!WARNING]
-> 2026年4月5日現在ではダウンロード可能ですが、この先 YouTube の仕様変更によりダウンロードできなくなる可能性があります。あらかじめご了承ください。
+> As of April 5, 2026, downloading is confirmed to work. However, future YouTube specification changes may break functionality. Please be aware of this limitation.
+
+**[日本語版 README はこちら](README.ja.md)**
 
 ---
 
-## 機能
+## Features
 
-| 機能 | 説明 |
-|------|------|
-| 動画情報取得 | タイトル・投稿者・再生時間を取得してプレビュー表示 |
-| MP4 ダウンロード | ffmpeg があれば最高画質（映像+音声を個別取得してマージ）、なければ最大 360p |
-| MP3 ダウンロード | ffmpeg があれば 192kbps・44.1kHz に変換、なければ元コンテナ（.m4a）で保存 |
-| リアルタイムログ | ダウンロード進捗・処理ステップをタイムスタンプ付きで画面に表示 |
-| 保存先を開く | 完了後にダウンロードフォルダを Finder（macOS）で開く |
+| Feature | Description |
+|---------|-------------|
+| Video Info Fetch | Retrieve title, author, and duration with preview |
+| MP4 Download | Highest quality with ffmpeg (separate video+audio merged), or up to 360p without ffmpeg |
+| MP3 Download | Converted to 192kbps / 44.1kHz with ffmpeg, or saved as original container (.m4a) without ffmpeg |
+| Real-time Log | Download progress and processing steps displayed with timestamps |
+| Open Folder | Open the Downloads folder in Finder (macOS) after completion |
 
 ---
 
-## 必要な環境
+## Requirements
 
 ### Flutter SDK
 
 ```
-Flutter 3.x 以上（Dart 3.9 以上）
+Flutter 3.x or later (Dart 3.9 or later)
 ```
 
-インストール方法: https://docs.flutter.dev/get-started/install
+Installation: https://docs.flutter.dev/get-started/install
 
-### ffmpeg（任意・推奨）
+### ffmpeg (optional, recommended)
 
-ffmpeg がインストールされていない場合でも動作しますが、高画質ダウンロードや MP3 変換には必要です。
+The app works without ffmpeg, but it is required for high-quality downloads and MP3 conversion.
 
 ```bash
-# macOS（Homebrew）
+# macOS (Homebrew)
 brew install ffmpeg
 
-# Windows（Winget）
+# Windows (Winget)
 winget install ffmpeg
 
-# Linux（apt）
+# Linux (apt)
 sudo apt install ffmpeg
 ```
 
 ---
 
-## セットアップ
+## Setup
 
-### 1. リポジトリをクローン
+### 1. Clone the repository
 
 ```bash
-git clone <repository-url>
-cd youtubetomp3
+git clone https://github.com/poropi/flutter-youtube-downloader.git
+cd flutter-youtube-downloader
 ```
 
-### 2. 依存パッケージを取得
+### 2. Install dependencies
 
 ```bash
 flutter pub get
 ```
 
-### 3. macOS のエンタイトルメント確認
+### 3. macOS entitlements check
 
-macOS では外部プロセス（ffmpeg）を起動するためにサンドボックスを無効化しています。
-下記ファイルで `com.apple.security.app-sandbox` が `<false/>` になっていることを確認してください。
+On macOS, the app sandbox is disabled to allow spawning external processes (ffmpeg).
+Verify that `com.apple.security.app-sandbox` is set to `<false/>` in the following files:
 
 - `macos/Runner/DebugProfile.entitlements`
 - `macos/Runner/Release.entitlements`
 
 ---
 
-## 実行方法
+## Running
 
 ```bash
-# デバッグモードで起動（macOS）
+# Debug mode (macOS)
 flutter run -d macos
 
 # Windows
@@ -88,23 +90,23 @@ flutter run -d linux
 
 ---
 
-## ビルド方法
+## Building
 
-### macOS（.app）
+### macOS (.app)
 
 ```bash
 flutter build macos
 ```
 
-ビルド成果物: `build/macos/Build/Products/Release/youtubetomp3.app`
+Output: `build/macos/Build/Products/Release/youtubetomp3.app`
 
-### Windows（.exe）
+### Windows (.exe)
 
 ```bash
 flutter build windows
 ```
 
-ビルド成果物: `build/windows/x64/runner/Release/youtubetomp3.exe`
+Output: `build/windows/x64/runner/Release/youtubetomp3.exe`
 
 ### Linux
 
@@ -112,78 +114,77 @@ flutter build windows
 flutter build linux
 ```
 
-ビルド成果物: `build/linux/x64/release/bundle/youtubetomp3`
+Output: `build/linux/x64/release/bundle/youtubetomp3`
 
 ---
 
-## 使い方
+## Usage
 
-1. **URL を入力** — YouTube の動画 URL を入力フィールドに貼り付ける
-2. **動画情報を取得**（任意） — 「動画情報を取得」ボタンでタイトル・時間を確認できる
-3. **フォーマットを選択** — MP3（音声のみ）または MP4（映像+音声）を選択する
-4. **ダウンロード** — 「ダウンロード」ボタンを押す
-5. **完了** — ダウンロードフォルダに保存される。「保存先フォルダを開く」で確認可能
+1. **Enter URL** — Paste a YouTube video URL into the input field
+2. **Fetch video info** (optional) — Click "動画情報を取得" to preview title and duration
+3. **Select format** — Choose MP3 (audio only) or MP4 (video + audio)
+4. **Download** — Click the "ダウンロード" button
+5. **Done** — The file is saved to your Downloads folder. Click "保存先フォルダを開く" to open it
 
-> ダウンロード中は進捗バーと処理ログがリアルタイムで更新されます。
+> The progress bar and processing log update in real time during download.
 
 ---
 
-## プロジェクト構成
+## Project Structure
 
 ```
 lib/
-├── main.dart                        # エントリポイント・テーマ設定
+├── main.dart                        # Entry point & theme
 ├── models/
 │   ├── enums.dart                   # OutputFormat / DownloadState
-│   ├── log_entry.dart               # ログ 1 行のデータクラス
-│   └── video_info.dart              # YouTube 動画情報モデル
+│   ├── log_entry.dart               # Log entry data class
+│   └── video_info.dart              # YouTube video info model
 ├── viewmodels/
-│   └── downloader_viewmodel.dart    # 全ビジネスロジック（ChangeNotifier）
+│   └── downloader_viewmodel.dart    # All business logic (ChangeNotifier)
 └── views/
-    ├── downloader_page.dart         # メイン画面（View）
+    ├── downloader_page.dart         # Main screen (View)
     └── widgets/
-        ├── format_card.dart         # MP3/MP4 選択カード
-        ├── video_info_card.dart     # 動画情報表示カード
-        ├── status_section.dart      # 進捗バー・ステータスカード
-        └── log_panel.dart           # タイムスタンプ付きログパネル
+        ├── format_card.dart         # MP3/MP4 selection card
+        ├── video_info_card.dart     # Video info display card
+        ├── status_section.dart      # Progress bar & status card
+        └── log_panel.dart           # Timestamped log panel
 ```
 
-### アーキテクチャ（MVVM）
+### Architecture (MVVM)
 
 ```
-View（downloader_page.dart + widgets/）
-  └── ListenableBuilder で監視
-ViewModel（downloader_viewmodel.dart）
-  ├── ChangeNotifier で状態変化を通知
-  └── youtube_explode_dart / Process.run(ffmpeg) を呼び出す
-Model（models/）
-  └── 純粋なデータクラス・列挙型
+View (downloader_page.dart + widgets/)
+  └── Observed via ListenableBuilder
+ViewModel (downloader_viewmodel.dart)
+  ├── Notifies state changes via ChangeNotifier
+  └── Calls youtube_explode_dart / Process.run(ffmpeg)
+Model (models/)
+  └── Pure data classes and enumerations
 ```
 
 ---
 
-## 使用パッケージ
+## Packages
 
-| パッケージ | バージョン | 用途 |
-|-----------|-----------|------|
-| [youtube_explode_dart](https://pub.dev/packages/youtube_explode_dart) | ^3.0.5 | YouTube 動画情報・ストリーム取得 |
-| [path_provider](https://pub.dev/packages/path_provider) | ^2.1.5 | Downloads ディレクトリのパス解決 |
+| Package | Version | Purpose |
+|---------|---------|---------|
+| [youtube_explode_dart](https://pub.dev/packages/youtube_explode_dart) | ^3.0.5 | YouTube video info & stream fetching |
+| [path_provider](https://pub.dev/packages/path_provider) | ^2.1.5 | Resolving the Downloads directory path |
 
 ---
 
-## トラブルシューティング
+## Troubleshooting
 
-### ダウンロードが始まらない / エラーになる
+### Download does not start / returns an error
 
-- URL が正しい YouTube の動画 URL かどうか確認してください
-- ネットワーク接続を確認してください
-- YouTube 側の仕様変更により動作しない場合は `youtube_explode_dart` のバージョンアップで解消することがあります
+- Check that the URL is a valid YouTube video URL
+- Check your network connection
+- If the issue is caused by a YouTube specification change, upgrading `youtube_explode_dart` may resolve it
 
-### MP3 変換されず .m4a で保存される
+### Saved as .m4a instead of .mp3
 
-- ffmpeg がインストールされていません。`brew install ffmpeg` を実行してください
-- アプリを再起動すると ffmpeg が検出されます
+- ffmpeg is not installed. Run `brew install ffmpeg` and restart the app
 
-### macOS で「操作は許可されていません」エラーが出る
+### "Operation not permitted" error on macOS
 
-- `macos/Runner/DebugProfile.entitlements` の `com.apple.security.app-sandbox` が `<false/>` になっているか確認してください
+- Verify that `com.apple.security.app-sandbox` is `<false/>` in `macos/Runner/DebugProfile.entitlements`
