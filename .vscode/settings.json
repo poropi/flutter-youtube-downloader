@@ -1,5 +1,13 @@
 {
     "chat.tools.terminal.autoApprove": {
-        "ffmpeg": true
+        "ffmpeg": true,
+        "/^which rsvg-convert inkscape convert magick python3 2>/dev/null; python3 -c \"import cairosvg\" 2>/dev/null && echo \"cairosvg OK\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^python3 -c \"from PIL import Image, ImageDraw; print\\('Pillow OK'\\)\" 2>/dev/null \\|\\| echo \"No Pillow\"; python3 -c \"import cairosvg; print\\('cairosvg OK'\\)\" 2>/dev/null \\|\\| echo \"No cairosvg\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
     }
 }
