@@ -67,11 +67,13 @@ flutter pub get
 
 ### 3. macOS のエンタイトルメント確認
 
-macOS では外部プロセス（ffmpeg）を起動するためにサンドボックスを無効化しています。
+macOS では ffmpeg を呼び出すためにサンドボックスを無効化しています。
 下記ファイルで `com.apple.security.app-sandbox` が `<false/>` になっていることを確認してください。
 
 - `macos/Runner/DebugProfile.entitlements`
 - `macos/Runner/Release.entitlements`
+
+> **注意**: アプリ起動時の ffmpeg 検出は `Process.run` を使わず、固定パス（`/opt/homebrew/bin/ffmpeg` など）の存在確認のみで行います。これは macOS 26 以降の Finder 起動時に `Process.run` がプロセス終了を引き起こす問題を回避するためです。
 
 ---
 
@@ -157,10 +159,13 @@ View（downloader_page.dart + widgets/）
   └── ListenableBuilder で監視
 ViewModel（downloader_viewmodel.dart）
   ├── ChangeNotifier で状態変化を通知
-  └── youtube_explode_dart / Process.run(ffmpeg) を呼び出す
+  ├── youtube_explode_dart でストリーム取得
+  └── Process.run(ffmpeg) で変換・マージ（ダウンロード操作時のみ）
 Model（models/）
   └── 純粋なデータクラス・列挙型
 ```
+
+> ffmpeg の検出（起動時）は `File.existsSync()` による固定パス確認で行い、`Process.run` はユーザーがダウンロードを開始した後のみ実行されます。
 
 ---
 
@@ -184,6 +189,7 @@ Model（models/）
 ### MP3 変換されず .m4a で保存される
 
 - ffmpeg がインストールされていません。`brew install ffmpeg` を実行してアプリを再起動してください
+- ffmpeg を Homebrew 以外の方法でインストールした場合、`/opt/homebrew/bin/ffmpeg`・`/usr/local/bin/ffmpeg`・`/opt/local/bin/ffmpeg`・`/usr/bin/ffmpeg` のいずれかに実行ファイルが存在するか確認してください
 
 ### macOS で「操作は許可されていません」エラーが出る
 

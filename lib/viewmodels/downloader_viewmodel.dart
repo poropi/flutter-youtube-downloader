@@ -40,6 +40,9 @@ class DownloaderViewModel extends ChangeNotifier {
   /// システムに ffmpeg がインストールされているかどうか。
   bool _ffmpegAvailable = false;
 
+  /// 利用可能な ffmpeg 実行ファイルのフルパス。
+  String? _ffmpegExecutable;
+
   /// タイムスタンプ付きの処理ログ一覧。
   final List<LogEntry> _logs = [];
 
@@ -90,13 +93,25 @@ class DownloaderViewModel extends ChangeNotifier {
     _checkFfmpeg();
   }
 
-  /// `which ffmpeg` を実行してシステムに ffmpeg があるか確認する。
+  /// macOS の代表的なインストール先を existsSync で確認する。
+  /// Process.run は使わない（Finder起動時に SIGKILL を引き起こすため）。
   Future<void> _checkFfmpeg() async {
-    try {
-      final result = await Process.run('which', ['ffmpeg']);
-      _ffmpegAvailable = result.exitCode == 0;
-      _notify();
-    } catch (_) {}
+    final candidates = [
+      '/opt/homebrew/bin/ffmpeg',
+      '/usr/local/bin/ffmpeg',
+      '/opt/local/bin/ffmpeg',
+      '/usr/bin/ffmpeg',
+    ];
+    for (final path in candidates) {
+      if (File(path).existsSync()) {
+        _ffmpegAvailable = true;
+        _ffmpegExecutable = path;
+        _notify();
+        return;
+      }
+    }
+    _ffmpegAvailable = false;
+    _notify();
   }
 
   // ─── 公開メソッド（View から呼び出す） ────────────────────
@@ -134,7 +149,9 @@ class DownloaderViewModel extends ChangeNotifier {
     try {
       final video = await yt.videos.get(url);
       _videoInfo = VideoInfo.fromVideo(video);
-      _addLog(_l10n?.logFetchSuccess(video.title) ?? 'Retrieved: "${video.title}"');
+      _addLog(
+        _l10n?.logFetchSuccess(video.title) ?? 'Retrieved: "${video.title}"',
+      );
       _setState(DownloadState.idle, _l10n?.statusFetchSuccess ?? 'Done');
     } catch (e) {
       _addLog(_l10n?.logError(e.toString()) ?? 'Error: $e', isError: true);
@@ -160,7 +177,10 @@ class DownloaderViewModel extends ChangeNotifier {
     _clearLogs();
     _progress = 0;
     _savedPath = '';
-    _setState(DownloadState.downloading, _l10n?.statusDownloading ?? 'Downloading...');
+    _setState(
+      DownloadState.downloading,
+      _l10n?.statusDownloading ?? 'Downloading...',
+    );
 
     final yt = YoutubeExplode();
     try {
@@ -184,7 +204,10 @@ class DownloaderViewModel extends ChangeNotifier {
     } catch (e, st) {
       _addLog(_l10n?.logError(e.toString()) ?? 'Error: $e', isError: true);
       _addLog(st.toString().split('\n').first, isError: true);
-      _setState(DownloadState.error, _l10n?.statusError(e.toString()) ?? 'Error: $e');
+      _setState(
+        DownloadState.error,
+        _l10n?.statusError(e.toString()) ?? 'Error: $e',
+      );
     } finally {
       yt.close();
     }
@@ -223,15 +246,19 @@ class DownloaderViewModel extends ChangeNotifier {
       _addLog(_l10n?.logHighQualityMode ?? 'High quality mode');
       final videoStream = manifest.videoOnly.sortByVideoQuality().first;
       final audioStream = manifest.audioOnly.withHighestBitrate();
-      _addLog(_l10n?.logVideoStream(
-            videoStream.videoQuality.toString(),
-            videoStream.codec.mimeType,
-          ) ??
-          'Video: ${videoStream.videoQuality}');
-      _addLog(_l10n?.logAudioStream(
-            audioStream.bitrate.kiloBitsPerSecond.toStringAsFixed(0),
-          ) ??
-          'Audio: ${audioStream.bitrate.kiloBitsPerSecond.toStringAsFixed(0)}kbps');
+      _addLog(
+        _l10n?.logVideoStream(
+              videoStream.videoQuality.toString(),
+              videoStream.codec.mimeType,
+            ) ??
+            'Video: ${videoStream.videoQuality}',
+      );
+      _addLog(
+        _l10n?.logAudioStream(
+              audioStream.bitrate.kiloBitsPerSecond.toStringAsFixed(0),
+            ) ??
+            'Audio: ${audioStream.bitrate.kiloBitsPerSecond.toStringAsFixed(0)}kbps',
+      );
 
       final tempVideo = '$dirPath/__tmp_video.${videoStream.container.name}';
       final tempAudio = '$dirPath/__tmp_audio.${audioStream.container.name}';
@@ -240,28 +267,46 @@ class DownloaderViewModel extends ChangeNotifier {
       await _downloadStream(yt, videoStream, tempVideo, label: labelVideo);
 
       _progress = 0;
-      _setState(DownloadState.downloading, _l10n?.statusDownloadingAudio ?? 'Downloading audio...');
+      _setState(
+        DownloadState.downloading,
+        _l10n?.statusDownloadingAudio ?? 'Downloading audio...',
+      );
       _addLog(_l10n?.logStartAudioDownload ?? 'Starting audio download...');
       await _downloadStream(yt, audioStream, tempAudio, label: labelAudio);
 
       _setState(DownloadState.converting, _l10n?.statusMerging ?? 'Merging...');
       _addLog(_l10n?.logMerging ?? 'Merging...');
 
-      final result = await Process.run('ffmpeg', [
-        '-y', '-i', tempVideo, '-i', tempAudio, '-c:v', 'copy', '-c:a', 'aac', savePath,
+      final result = await Process.run(_ffmpegExecutable!, [
+        '-y',
+        '-i',
+        tempVideo,
+        '-i',
+        tempAudio,
+        '-c:v',
+        'copy',
+        '-c:a',
+        'aac',
+        savePath,
       ]);
 
       await File(tempVideo).delete().catchError((_) => File(tempVideo));
       await File(tempAudio).delete().catchError((_) => File(tempAudio));
 
       if (result.exitCode != 0) {
-        _addLog(_l10n?.logFfmpegError(result.stderr.toString()) ?? 'ffmpeg error', isError: true);
+        _addLog(
+          _l10n?.logFfmpegError(result.stderr.toString()) ?? 'ffmpeg error',
+          isError: true,
+        );
         throw Exception('ffmpeg merge failed (exitCode=${result.exitCode})');
       }
     } else {
       _addLog(_l10n?.logNoFfmpegMuxed ?? 'Using muxed stream');
       final muxed = manifest.muxed.withHighestBitrate();
-      _addLog(_l10n?.logQuality(muxed.videoQuality.toString()) ?? 'Quality: ${muxed.videoQuality}');
+      _addLog(
+        _l10n?.logQuality(muxed.videoQuality.toString()) ??
+            'Quality: ${muxed.videoQuality}',
+      );
       await _downloadStream(yt, muxed, savePath, label: 'MP4');
     }
 
@@ -287,30 +332,50 @@ class DownloaderViewModel extends ChangeNotifier {
     String title,
   ) async {
     final audioStream = manifest.audioOnly.withHighestBitrate();
-    final tempExt = audioStream.container.name == 'mp4' ? 'm4a' : audioStream.container.name;
+    final tempExt = audioStream.container.name == 'mp4'
+        ? 'm4a'
+        : audioStream.container.name;
     final tempPath = '$dirPath/__tmp_audio.$tempExt';
     final labelAudio = _l10n?.labelAudio ?? 'Audio';
 
-    _addLog(_l10n?.logAudioInfo(
-          audioStream.bitrate.kiloBitsPerSecond.toStringAsFixed(0),
-          tempExt,
-        ) ??
-        'Audio: ${audioStream.bitrate.kiloBitsPerSecond.toStringAsFixed(0)}kbps ($tempExt)');
+    _addLog(
+      _l10n?.logAudioInfo(
+            audioStream.bitrate.kiloBitsPerSecond.toStringAsFixed(0),
+            tempExt,
+          ) ??
+          'Audio: ${audioStream.bitrate.kiloBitsPerSecond.toStringAsFixed(0)}kbps ($tempExt)',
+    );
     _addLog(_l10n?.logStartAudioDownload ?? 'Starting audio download...');
     await _downloadStream(yt, audioStream, tempPath, label: labelAudio);
 
     if (_ffmpegAvailable) {
-      _setState(DownloadState.converting, _l10n?.statusConvertingMp3 ?? 'Converting to MP3...');
+      _setState(
+        DownloadState.converting,
+        _l10n?.statusConvertingMp3 ?? 'Converting to MP3...',
+      );
       _addLog(_l10n?.logConvertingMp3 ?? 'Converting to MP3...');
 
       final savePath = '$dirPath/$title.mp3';
-      final result = await Process.run('ffmpeg', [
-        '-y', '-i', tempPath, '-vn', '-ar', '44100', '-ac', '2', '-b:a', '192k', savePath,
+      final result = await Process.run(_ffmpegExecutable!, [
+        '-y',
+        '-i',
+        tempPath,
+        '-vn',
+        '-ar',
+        '44100',
+        '-ac',
+        '2',
+        '-b:a',
+        '192k',
+        savePath,
       ]);
       await File(tempPath).delete().catchError((_) => File(tempPath));
 
       if (result.exitCode != 0) {
-        _addLog(_l10n?.logFfmpegError(result.stderr.toString()) ?? 'ffmpeg error', isError: true);
+        _addLog(
+          _l10n?.logFfmpegError(result.stderr.toString()) ?? 'ffmpeg error',
+          isError: true,
+        );
         throw Exception('MP3 conversion failed (exitCode=${result.exitCode})');
       }
 
@@ -345,11 +410,13 @@ class DownloaderViewModel extends ChangeNotifier {
     required String label,
   }) async {
     final total = streamInfo.size.totalBytes;
-    _addLog(_l10n?.logDownloadStart(
-          label,
-          (total / 1024 / 1024).toStringAsFixed(1),
-        ) ??
-        '[$label] Starting (${(total / 1024 / 1024).toStringAsFixed(1)} MB)');
+    _addLog(
+      _l10n?.logDownloadStart(
+            label,
+            (total / 1024 / 1024).toStringAsFixed(1),
+          ) ??
+          '[$label] Starting (${(total / 1024 / 1024).toStringAsFixed(1)} MB)',
+    );
 
     final stream = yt.videos.streams.get(streamInfo);
     final sink = File(savePath).openWrite();
@@ -359,7 +426,8 @@ class DownloaderViewModel extends ChangeNotifier {
       sink.add(chunk);
       received += chunk.length;
       _progress = received / total;
-      _statusMessage = _l10n?.logDownloadProgress(
+      _statusMessage =
+          _l10n?.logDownloadProgress(
             label,
             (received / 1024 / 1024).toStringAsFixed(1),
             (total / 1024 / 1024).toStringAsFixed(1),
@@ -384,7 +452,9 @@ class DownloaderViewModel extends ChangeNotifier {
       final dir = Directory('${Platform.environment['HOME']}/Downloads');
       if (await dir.exists()) return dir;
     } else if (Platform.isWindows) {
-      final dir = Directory('${Platform.environment['USERPROFILE']}\\Downloads');
+      final dir = Directory(
+        '${Platform.environment['USERPROFILE']}\\Downloads',
+      );
       if (await dir.exists()) return dir;
     }
     return await getApplicationDocumentsDirectory();

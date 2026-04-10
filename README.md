@@ -67,11 +67,13 @@ flutter pub get
 
 ### 3. macOS entitlements check
 
-On macOS, the app sandbox is disabled to allow spawning external processes (ffmpeg).
+On macOS, the app sandbox is disabled to allow calling ffmpeg.
 Verify that `com.apple.security.app-sandbox` is set to `<false/>` in the following files:
 
 - `macos/Runner/DebugProfile.entitlements`
 - `macos/Runner/Release.entitlements`
+
+> **Note**: At startup, ffmpeg detection uses only `File.existsSync()` against fixed paths (e.g. `/opt/homebrew/bin/ffmpeg`) without calling `Process.run`. This avoids a macOS 26+ issue where `Process.run` causes the app to be killed when launched from Finder.
 
 ---
 
@@ -157,10 +159,13 @@ View (downloader_page.dart + widgets/)
   └── Observed via ListenableBuilder
 ViewModel (downloader_viewmodel.dart)
   ├── Notifies state changes via ChangeNotifier
-  └── Calls youtube_explode_dart / Process.run(ffmpeg)
+  ├── Fetches streams via youtube_explode_dart
+  └── Calls Process.run(ffmpeg) for conversion/merging (only during download)
 Model (models/)
   └── Pure data classes and enumerations
 ```
+
+> ffmpeg detection at startup uses `File.existsSync()` against fixed paths only. `Process.run` is called only after the user initiates a download.
 
 ---
 
@@ -184,6 +189,7 @@ Model (models/)
 ### Saved as .m4a instead of .mp3
 
 - ffmpeg is not installed. Run `brew install ffmpeg` and restart the app
+- If ffmpeg was installed via a method other than Homebrew, verify the executable exists at one of: `/opt/homebrew/bin/ffmpeg`, `/usr/local/bin/ffmpeg`, `/opt/local/bin/ffmpeg`, or `/usr/bin/ffmpeg`
 
 ### "Operation not permitted" error on macOS
 
