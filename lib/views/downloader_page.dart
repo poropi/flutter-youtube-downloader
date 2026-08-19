@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../viewmodels/downloader_viewmodel.dart';
 import '../models/enums.dart';
+import '../services/external_tools.dart';
 import '../l10n/app_localizations.dart';
 import 'widgets/format_card.dart';
 import 'widgets/video_info_card.dart';
@@ -139,12 +140,12 @@ class _DownloaderPageState extends State<DownloaderPage> {
     );
   }
 
-  /// ffmpeg の検出状態を示すバッジテキストを返す。
+  /// 外部コマンド (yt-dlp / ffmpeg / JS ランタイム) の検出状態を示すバッジを返す。
   Widget _buildFfmpegBadge(BuildContext context, AppLocalizations l10n) {
     final cs = Theme.of(context).colorScheme;
-    final label = _viewModel.ffmpegAvailable
-        ? l10n.ffmpegDetected
-        : l10n.ffmpegNotDetected;
+    final label = _viewModel.toolsReady
+        ? l10n.toolsReady
+        : l10n.toolsMissing(_viewModel.missingTools.map(_toolLabel).join(', '));
     return Center(
       child: Text(
         label,
@@ -152,6 +153,13 @@ class _DownloaderPageState extends State<DownloaderPage> {
       ),
     );
   }
+
+  /// バッジ表示用のツール名。
+  String _toolLabel(MissingTool tool) => switch (tool) {
+        MissingTool.ytDlp => 'yt-dlp',
+        MissingTool.ffmpeg => 'ffmpeg',
+        MissingTool.jsRuntime => 'deno',
+      };
 
   /// YouTube URL を入力するテキストフィールドを返す。
   Widget _buildUrlField(BuildContext context, AppLocalizations l10n) {

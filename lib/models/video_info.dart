@@ -1,15 +1,10 @@
-import 'package:youtube_explode_dart/youtube_explode_dart.dart';
-
-/// youtube_explode_dart の [Video] オブジェクトを UI 向けに薄くラップしたモデル。
+/// 動画のメタ情報を UI 向けに保持するモデル。
 ///
-/// ViewModel が [VideoInfo.fromVideo] で変換して保持し、View はこのクラスを通じて
-/// タイトル・投稿者・再生時間を参照する。
-/// ライブラリ固有の型を View 層に露出させないための境界として機能する。
+/// ViewModel が [VideoInfo.fromYtDlpJson] で yt-dlp の JSON から変換して保持し、
+/// View はこのクラスを通じてタイトル・投稿者・再生時間を参照する。
+/// yt-dlp の JSON 構造を View 層に露出させないための境界として機能する。
 class VideoInfo {
   /// YouTube 動画の ID 文字列（例: `"dQw4w9WgXcQ"`）。
-  ///
-  /// [DownloaderViewModel] がストリームマニフェストを取得する際に
-  /// `yt.videos.streams.getManifest(id)` の引数として使用する。
   final String id;
 
   /// 動画のタイトル。
@@ -29,16 +24,19 @@ class VideoInfo {
     this.duration,
   });
 
-  /// youtube_explode_dart の [Video] からインスタンスを生成するファクトリ。
+  /// yt-dlp の `--dump-single-json` 出力からインスタンスを生成する。
   ///
-  /// `video.id.value` を [id] に格納することで、ライブラリの [VideoId] 型を
-  /// この層より上に持ち込まないようにしている。
-  factory VideoInfo.fromVideo(Video video) => VideoInfo(
-        id: video.id.value,
-        title: video.title,
-        author: video.author,
-        duration: video.duration,
-      );
+  /// `duration` は秒数で、動画によっては小数や欠損があるため丸めと既定値を入れる。
+  /// 投稿者は `uploader` が無い動画があるため `channel` にフォールバックする。
+  factory VideoInfo.fromYtDlpJson(Map<String, dynamic> json) {
+    final seconds = json['duration'];
+    return VideoInfo(
+      id: json['id'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      author: json['uploader'] as String? ?? json['channel'] as String? ?? '',
+      duration: seconds is num ? Duration(seconds: seconds.round()) : null,
+    );
+  }
 
   /// 再生時間を `"M:SS"` 形式の文字列で返すゲッター。
   ///

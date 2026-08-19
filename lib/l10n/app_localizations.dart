@@ -104,17 +104,23 @@ abstract class AppLocalizations {
   /// **'YouTube Downloader'**
   String get appTitle;
 
-  /// No description provided for @ffmpegDetected.
+  /// No description provided for @toolsReady.
   ///
   /// In en, this message translates to:
-  /// **'ffmpeg detected  ·  High-quality MP4 / MP3 conversion supported'**
-  String get ffmpegDetected;
+  /// **'yt-dlp / ffmpeg / deno detected  ·  high quality MP4 / MP3 ready'**
+  String get toolsReady;
 
-  /// No description provided for @ffmpegNotDetected.
+  /// No description provided for @toolsMissing.
   ///
   /// In en, this message translates to:
-  /// **'ffmpeg not detected  ·  MP4 up to 360p / audio saved as .m4a'**
-  String get ffmpegNotDetected;
+  /// **'Missing: {tools}  ·  downloads unavailable'**
+  String toolsMissing(String tools);
+
+  /// No description provided for @toolJsRuntime.
+  ///
+  /// In en, this message translates to:
+  /// **'deno (JS runtime)'**
+  String get toolJsRuntime;
 
   /// No description provided for @urlLabel.
   ///
@@ -149,7 +155,7 @@ abstract class AppLocalizations {
   /// No description provided for @openFolderButton.
   ///
   /// In en, this message translates to:
-  /// **'Open folder'**
+  /// **'Open destination folder'**
   String get openFolderButton;
 
   /// No description provided for @resetButton.
@@ -161,7 +167,7 @@ abstract class AppLocalizations {
   /// No description provided for @logPanelTitle.
   ///
   /// In en, this message translates to:
-  /// **'Processing log'**
+  /// **'Log'**
   String get logPanelTitle;
 
   /// No description provided for @savedPath.
@@ -179,7 +185,7 @@ abstract class AppLocalizations {
   /// No description provided for @formatMp4Subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Video + Audio'**
+  /// **'Video + audio'**
   String get formatMp4Subtitle;
 
   /// No description provided for @statusFetching.
@@ -197,7 +203,7 @@ abstract class AppLocalizations {
   /// No description provided for @statusUrlInvalid.
   ///
   /// In en, this message translates to:
-  /// **'Invalid URL or video not found'**
+  /// **'Invalid URL, or the video was not found'**
   String get statusUrlInvalid;
 
   /// No description provided for @statusDownloading.
@@ -206,16 +212,22 @@ abstract class AppLocalizations {
   /// **'Downloading...'**
   String get statusDownloading;
 
-  /// No description provided for @statusDownloadingAudio.
+  /// No description provided for @statusDownloadingProgress.
   ///
   /// In en, this message translates to:
-  /// **'Downloading audio...'**
-  String get statusDownloadingAudio;
+  /// **'Downloading... {received} / {total} MB'**
+  String statusDownloadingProgress(String received, String total);
+
+  /// No description provided for @statusDownloadingUnknownTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading... {received} MB'**
+  String statusDownloadingUnknownTotal(String received);
 
   /// No description provided for @statusMerging.
   ///
   /// In en, this message translates to:
-  /// **'Merging with ffmpeg...'**
+  /// **'Merging video and audio with ffmpeg...'**
   String get statusMerging;
 
   /// No description provided for @statusConvertingMp3.
@@ -230,40 +242,22 @@ abstract class AppLocalizations {
   /// **'Done!'**
   String get statusDone;
 
-  /// No description provided for @statusDoneNoFfmpegMp4.
-  ///
-  /// In en, this message translates to:
-  /// **'Done! (Up to 360p — install ffmpeg for higher quality)\nbrew install ffmpeg'**
-  String get statusDoneNoFfmpegMp4;
-
-  /// No description provided for @statusDoneNoFfmpegMp3.
-  ///
-  /// In en, this message translates to:
-  /// **'Done! (Saved as .{ext} — ffmpeg not found)\nFor MP3: brew install ffmpeg'**
-  String statusDoneNoFfmpegMp3(String ext);
-
   /// No description provided for @statusError.
   ///
   /// In en, this message translates to:
   /// **'Error: {message}'**
   String statusError(String message);
 
-  /// No description provided for @labelVideo.
+  /// No description provided for @statusToolsMissing.
   ///
   /// In en, this message translates to:
-  /// **'Video'**
-  String get labelVideo;
-
-  /// No description provided for @labelAudio.
-  ///
-  /// In en, this message translates to:
-  /// **'Audio'**
-  String get labelAudio;
+  /// **'Required commands not found: {tools}'**
+  String statusToolsMissing(String tools);
 
   /// No description provided for @logFetchingInfo.
   ///
   /// In en, this message translates to:
-  /// **'Fetching video info with YoutubeExplode v3...'**
+  /// **'Fetching video info with yt-dlp...'**
   String get logFetchingInfo;
 
   /// No description provided for @logFetchSuccess.
@@ -272,131 +266,29 @@ abstract class AppLocalizations {
   /// **'Retrieved: \"{title}\"'**
   String logFetchSuccess(String title);
 
+  /// No description provided for @logUsingClient.
+  ///
+  /// In en, this message translates to:
+  /// **'yt-dlp client: web_embedded'**
+  String get logUsingClient;
+
+  /// No description provided for @logSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved: {path}'**
+  String logSaved(String path);
+
+  /// No description provided for @logToolMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'{tool} not found. Install it with: {command}'**
+  String logToolMissing(String tool, String command);
+
   /// No description provided for @logError.
   ///
   /// In en, this message translates to:
   /// **'Error: {message}'**
   String logError(String message);
-
-  /// No description provided for @logFetchingManifest.
-  ///
-  /// In en, this message translates to:
-  /// **'Fetching stream manifest...'**
-  String get logFetchingManifest;
-
-  /// No description provided for @logUsingClients.
-  ///
-  /// In en, this message translates to:
-  /// **'ytClients: [safari, androidVr]'**
-  String get logUsingClients;
-
-  /// No description provided for @logManifestReady.
-  ///
-  /// In en, this message translates to:
-  /// **'Manifest retrieved'**
-  String get logManifestReady;
-
-  /// No description provided for @logHighQualityMode.
-  ///
-  /// In en, this message translates to:
-  /// **'ffmpeg found → High quality mode (separate video+audio streams)'**
-  String get logHighQualityMode;
-
-  /// No description provided for @logVideoStream.
-  ///
-  /// In en, this message translates to:
-  /// **'Video: {quality} ({codec})'**
-  String logVideoStream(String quality, String codec);
-
-  /// No description provided for @logAudioStream.
-  ///
-  /// In en, this message translates to:
-  /// **'Audio: {bitrate}kbps'**
-  String logAudioStream(String bitrate);
-
-  /// No description provided for @logStartVideoDownload.
-  ///
-  /// In en, this message translates to:
-  /// **'Starting video download...'**
-  String get logStartVideoDownload;
-
-  /// No description provided for @logStartAudioDownload.
-  ///
-  /// In en, this message translates to:
-  /// **'Starting audio download...'**
-  String get logStartAudioDownload;
-
-  /// No description provided for @logMerging.
-  ///
-  /// In en, this message translates to:
-  /// **'Merging with ffmpeg...'**
-  String get logMerging;
-
-  /// No description provided for @logFfmpegError.
-  ///
-  /// In en, this message translates to:
-  /// **'ffmpeg error: {stderr}'**
-  String logFfmpegError(String stderr);
-
-  /// No description provided for @logNoFfmpegMuxed.
-  ///
-  /// In en, this message translates to:
-  /// **'ffmpeg not found → Using muxed stream (up to 360p)'**
-  String get logNoFfmpegMuxed;
-
-  /// No description provided for @logQuality.
-  ///
-  /// In en, this message translates to:
-  /// **'Quality: {quality}'**
-  String logQuality(String quality);
-
-  /// No description provided for @logMp4Done.
-  ///
-  /// In en, this message translates to:
-  /// **'MP4 complete: {path}'**
-  String logMp4Done(String path);
-
-  /// No description provided for @logAudioInfo.
-  ///
-  /// In en, this message translates to:
-  /// **'Audio: {bitrate}kbps ({ext})'**
-  String logAudioInfo(String bitrate, String ext);
-
-  /// No description provided for @logConvertingMp3.
-  ///
-  /// In en, this message translates to:
-  /// **'Converting to MP3 with ffmpeg...'**
-  String get logConvertingMp3;
-
-  /// No description provided for @logMp3Done.
-  ///
-  /// In en, this message translates to:
-  /// **'MP3 complete: {path}'**
-  String logMp3Done(String path);
-
-  /// No description provided for @logNoFfmpegSaving.
-  ///
-  /// In en, this message translates to:
-  /// **'ffmpeg not found → Saving as .{ext}'**
-  String logNoFfmpegSaving(String ext);
-
-  /// No description provided for @logDownloadStart.
-  ///
-  /// In en, this message translates to:
-  /// **'[{label}] Starting download (total: {size} MB)'**
-  String logDownloadStart(String label, String size);
-
-  /// No description provided for @logDownloadProgress.
-  ///
-  /// In en, this message translates to:
-  /// **'{label} downloading... {received} / {total} MB'**
-  String logDownloadProgress(String label, String received, String total);
-
-  /// No description provided for @logDownloadDone.
-  ///
-  /// In en, this message translates to:
-  /// **'[{label}] Download complete'**
-  String logDownloadDone(String label);
 }
 
 class _AppLocalizationsDelegate

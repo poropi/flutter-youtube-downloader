@@ -12,12 +12,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'YouTube Downloader';
 
   @override
-  String get ffmpegDetected =>
-      'ffmpeg detected  ·  High-quality MP4 / MP3 conversion supported';
+  String get toolsReady =>
+      'yt-dlp / ffmpeg / deno detected  ·  high quality MP4 / MP3 ready';
 
   @override
-  String get ffmpegNotDetected =>
-      'ffmpeg not detected  ·  MP4 up to 360p / audio saved as .m4a';
+  String toolsMissing(String tools) {
+    return 'Missing: $tools  ·  downloads unavailable';
+  }
+
+  @override
+  String get toolJsRuntime => 'deno (JS runtime)';
 
   @override
   String get urlLabel => 'YouTube URL';
@@ -35,13 +39,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get downloadButton => 'Download';
 
   @override
-  String get openFolderButton => 'Open folder';
+  String get openFolderButton => 'Open destination folder';
 
   @override
   String get resetButton => 'Start over';
 
   @override
-  String get logPanelTitle => 'Processing log';
+  String get logPanelTitle => 'Log';
 
   @override
   String savedPath(String path) {
@@ -52,7 +56,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get formatMp3Subtitle => 'Audio only';
 
   @override
-  String get formatMp4Subtitle => 'Video + Audio';
+  String get formatMp4Subtitle => 'Video + audio';
 
   @override
   String get statusFetching => 'Fetching video info...';
@@ -61,16 +65,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statusFetchSuccess => 'Video info retrieved';
 
   @override
-  String get statusUrlInvalid => 'Invalid URL or video not found';
+  String get statusUrlInvalid => 'Invalid URL, or the video was not found';
 
   @override
   String get statusDownloading => 'Downloading...';
 
   @override
-  String get statusDownloadingAudio => 'Downloading audio...';
+  String statusDownloadingProgress(String received, String total) {
+    return 'Downloading... $received / $total MB';
+  }
 
   @override
-  String get statusMerging => 'Merging with ffmpeg...';
+  String statusDownloadingUnknownTotal(String received) {
+    return 'Downloading... $received MB';
+  }
+
+  @override
+  String get statusMerging => 'Merging video and audio with ffmpeg...';
 
   @override
   String get statusConvertingMp3 => 'Converting to MP3...';
@@ -79,27 +90,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statusDone => 'Done!';
 
   @override
-  String get statusDoneNoFfmpegMp4 =>
-      'Done! (Up to 360p — install ffmpeg for higher quality)\nbrew install ffmpeg';
-
-  @override
-  String statusDoneNoFfmpegMp3(String ext) {
-    return 'Done! (Saved as .$ext — ffmpeg not found)\nFor MP3: brew install ffmpeg';
-  }
-
-  @override
   String statusError(String message) {
     return 'Error: $message';
   }
 
   @override
-  String get labelVideo => 'Video';
+  String statusToolsMissing(String tools) {
+    return 'Required commands not found: $tools';
+  }
 
   @override
-  String get labelAudio => 'Audio';
-
-  @override
-  String get logFetchingInfo => 'Fetching video info with YoutubeExplode v3...';
+  String get logFetchingInfo => 'Fetching video info with yt-dlp...';
 
   @override
   String logFetchSuccess(String title) {
@@ -107,91 +108,20 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get logUsingClient => 'yt-dlp client: web_embedded';
+
+  @override
+  String logSaved(String path) {
+    return 'Saved: $path';
+  }
+
+  @override
+  String logToolMissing(String tool, String command) {
+    return '$tool not found. Install it with: $command';
+  }
+
+  @override
   String logError(String message) {
     return 'Error: $message';
-  }
-
-  @override
-  String get logFetchingManifest => 'Fetching stream manifest...';
-
-  @override
-  String get logUsingClients => 'ytClients: [safari, androidVr]';
-
-  @override
-  String get logManifestReady => 'Manifest retrieved';
-
-  @override
-  String get logHighQualityMode =>
-      'ffmpeg found → High quality mode (separate video+audio streams)';
-
-  @override
-  String logVideoStream(String quality, String codec) {
-    return 'Video: $quality ($codec)';
-  }
-
-  @override
-  String logAudioStream(String bitrate) {
-    return 'Audio: ${bitrate}kbps';
-  }
-
-  @override
-  String get logStartVideoDownload => 'Starting video download...';
-
-  @override
-  String get logStartAudioDownload => 'Starting audio download...';
-
-  @override
-  String get logMerging => 'Merging with ffmpeg...';
-
-  @override
-  String logFfmpegError(String stderr) {
-    return 'ffmpeg error: $stderr';
-  }
-
-  @override
-  String get logNoFfmpegMuxed =>
-      'ffmpeg not found → Using muxed stream (up to 360p)';
-
-  @override
-  String logQuality(String quality) {
-    return 'Quality: $quality';
-  }
-
-  @override
-  String logMp4Done(String path) {
-    return 'MP4 complete: $path';
-  }
-
-  @override
-  String logAudioInfo(String bitrate, String ext) {
-    return 'Audio: ${bitrate}kbps ($ext)';
-  }
-
-  @override
-  String get logConvertingMp3 => 'Converting to MP3 with ffmpeg...';
-
-  @override
-  String logMp3Done(String path) {
-    return 'MP3 complete: $path';
-  }
-
-  @override
-  String logNoFfmpegSaving(String ext) {
-    return 'ffmpeg not found → Saving as .$ext';
-  }
-
-  @override
-  String logDownloadStart(String label, String size) {
-    return '[$label] Starting download (total: $size MB)';
-  }
-
-  @override
-  String logDownloadProgress(String label, String received, String total) {
-    return '$label downloading... $received / $total MB';
-  }
-
-  @override
-  String logDownloadDone(String label) {
-    return '[$label] Download complete';
   }
 }
